@@ -24,8 +24,9 @@ module.exports = (app) => {
         characterId, phase, now: Date.now(),
       });
     }
-    const id = insertDelivery(db, payload);
     const sender = db.prepare('SELECT name, avatar, is_allie FROM senders WHERE id = ?').get(payload.sender_id);
+    if (!sender) return res.status(400).json({ error: 'unknown sender' });
+    const id = insertDelivery(db, payload);
     const delivery = { id, ...payload, sender_name: sender.name, sender_avatar: sender.avatar, is_allie: sender.is_allie };
     const io = app.locals.io;
     if (io) emitDelivery(io, characterId, delivery);

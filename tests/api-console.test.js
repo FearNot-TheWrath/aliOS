@@ -36,3 +36,15 @@ test('console send requires auth', async () => {
   assert.strictEqual(res.status, 401);
   await close();
 });
+
+test('console send rejects unknown sender', async () => {
+  const { base, close } = await startTestServer();
+  const cookie = await consoleLogin(base);
+  const res = await fetch(`${base}/api/console/send`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ characterId: 1, senderId: 99999, app: 'messages', body: 'x' }),
+  });
+  assert.strictEqual(res.status, 400);
+  await close();
+});
