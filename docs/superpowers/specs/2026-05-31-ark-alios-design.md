@@ -53,7 +53,7 @@ A standalone app at `~/projects/ark-alios`, built on the established house stack
 - **Realtime:** Socket.io. The server holds open connections to all five player phones and the DM console. Sends and phase changes are pushed live, landing in well under a second.
 - **Frontend:** Vanilla JS PWA. Installs to the home screen so it behaves like a real device OS rather than a website in a tab.
 - **One server, two front-ends:** the same backend and database serve both the Player app and the DM console at different URLs. The console lives at a hidden path (for example `/console`) gated behind the parent PIN.
-- **Deploy:** PM2 plus Cloudflare Tunnel on acutis-box, following the established tunnel pattern. Proposed subdomain `alios.thelopezfamily.org`.
+- **Deploy:** PM2 plus Cloudflare Tunnel on acutis-box, following the established tunnel pattern. Proposed subdomain `alios.playdnd.online`.
 
 ## The Two Surfaces
 
@@ -124,7 +124,7 @@ Because the device room is mixed, realism rides on what works everywhere in the 
 
 **In v1 (must exist before Session 1):**
 
-- Server, DB, Socket.io, PWA scaffold, deployed at `alios.thelopezfamily.org` behind the tunnel.
+- Server, DB, Socket.io, PWA scaffold, deployed at `alios.playdnd.online` behind the tunnel.
 - Login (character picker plus PIN).
 - Player home screen: all six apps, live red badges, the dull idle screen.
 - Messages (receive only, threaded by sender).

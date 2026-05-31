@@ -38,12 +38,12 @@ DM console: http://localhost:3007/console  (parent PIN, default 1234)
    ```
 3. Add a Cloudflare Tunnel ingress rule in /etc/cloudflared/config.yml:
    ```
-   - hostname: alios.thelopezfamily.org
+   - hostname: alios.playdnd.online
      service: http://localhost:3007
    ```
    then restart: `sudo systemctl restart cloudflared`
 4. Add a CNAME for alios pointing at the tunnel.
-5. Verify https://alios.thelopezfamily.org serves the player app and /console prompts for the PIN.
+5. Verify https://alios.playdnd.online serves the player app and /console prompts for the PIN.
 
 ## Notes
 - iPhones cannot vibrate from a web app and cannot reliably receive background push. The design keeps the app open on the table during play, so delivery relies on sound plus a visual glow, which work on every device.
