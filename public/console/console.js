@@ -52,6 +52,11 @@ function renderMain() {
   const main = document.getElementById('main'); if (!main) return;
   const senderOpts = s.senders.map(x => `<option value="${x.id}">${x.name}${x.is_allie?' (Allie)':''}</option>`).join('');
   main.innerHTML = `
+    <div class="row">
+      <button onclick="window._view('send')">Send</button>
+      <button onclick="window._view('archive')">Archive</button>
+      <button onclick="window._view('decks')">Decks</button>
+    </div>
     <div class="phasebar" id="phasebar"></div>
     <h3>Send to ${nameOf(s.selected)}</h3>
     <div class="row">
@@ -117,3 +122,64 @@ window._newLib = async () => {
 };
 
 boot();
+
+s.view = 'send';
+window._view = (v) => { s.view = v; renderMain(); };
+
+const _origRenderMain = renderMain;
+renderMain = function () {
+  if (s.view === 'archive') return renderArchiveEditor();
+  if (s.view === 'decks') return renderDecksEditor();
+  return _origRenderMain();
+};
+
+async function renderArchiveEditor() {
+  const main = document.getElementById('main'); if (!main) return;
+  const { entries } = await (await fetch('/api/console/archive')).json();
+  main.innerHTML = `<div class="row">
+      <button onclick="window._view('send')">Send</button>
+      <button onclick="window._view('archive')">Archive</button>
+      <button onclick="window._view('decks')">Decks</button></div>
+    <h3>Archive entries</h3>
+    <div class="row"><input id="ak" placeholder="keyword"/><input id="ar" placeholder="response" style="flex:1"/>
+      <label><input type="checkbox" id="ax"/> redacted</label><button class="primary" onclick="window._addArchive()">Add</button></div>
+    ${entries.map(e => `<div class="lib-item">
+      <strong>${escapeHtml(e.keyword)}</strong> ${e.redacted?'<span style="color:#ff7a7a">[REDACTED]</span>':''}<br>
+      ${escapeHtml(e.response)}
+      <button onclick="window._toggleRedact(${e.id}, ${e.redacted?0:1})">${e.redacted?'unredact':'redact'}</button>
+    </div>`).join('')}`;
+}
+window._addArchive = async () => {
+  await fetch('/api/console/archive', { method:'POST', headers:{'content-type':'application/json'},
+    body: JSON.stringify({ keyword:document.getElementById('ak').value, response:document.getElementById('ar').value,
+      redacted: document.getElementById('ax').checked ? 1 : 0 }) });
+  renderArchiveEditor();
+};
+window._toggleRedact = async (id, redacted) => {
+  await fetch(`/api/console/archive/${id}/redact`, { method:'POST', headers:{'content-type':'application/json'},
+    body: JSON.stringify({ redacted }) });
+  renderArchiveEditor();
+};
+
+async function renderDecksEditor() {
+  const main = document.getElementById('main'); if (!main) return;
+  const { decks } = await (await fetch('/api/console/decks')).json();
+  main.innerHTML = `<div class="row">
+      <button onclick="window._view('send')">Send</button>
+      <button onclick="window._view('archive')">Archive</button>
+      <button onclick="window._view('decks')">Decks</button></div>
+    <h3>Decks</h3>
+    <div class="row"><input id="dn" placeholder="deck name"/><button class="primary" onclick="window._addDeck()">Add</button></div>
+    ${decks.map(d => `<div class="lib-item">${escapeHtml(d.name)}: ${d.unlocked?'unlocked':'sealed'}
+      <button onclick="window._unlock(${d.id}, ${d.unlocked?0:1})">${d.unlocked?'seal':'unlock'}</button></div>`).join('')}`;
+}
+window._addDeck = async () => {
+  await fetch('/api/console/decks', { method:'POST', headers:{'content-type':'application/json'},
+    body: JSON.stringify({ name: document.getElementById('dn').value }) });
+  renderDecksEditor();
+};
+window._unlock = async (id, unlocked) => {
+  await fetch(`/api/console/decks/${id}/unlock`, { method:'POST', headers:{'content-type':'application/json'},
+    body: JSON.stringify({ unlocked }) });
+  renderDecksEditor();
+};

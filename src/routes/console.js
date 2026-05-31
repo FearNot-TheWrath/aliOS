@@ -91,5 +91,22 @@ module.exports = (app) => {
     res.json({ ok: true });
   });
 
+  router.get('/decks', (req, res) => {
+    res.json({ decks: db.prepare('SELECT * FROM decks ORDER BY sort_order').all() });
+  });
+  router.post('/decks', (req, res) => {
+    const { id, name, imagePath = null, unlocked = 0, sortOrder = 0 } = req.body || {};
+    if (id) { db.prepare('UPDATE decks SET name=?, image_path=?, unlocked=?, sort_order=? WHERE id=?')
+      .run(name, imagePath, unlocked?1:0, sortOrder, id); return res.json({ ok:true, id }); }
+    const info = db.prepare('INSERT INTO decks (name, image_path, unlocked, sort_order) VALUES (?,?,?,?)')
+      .run(name, imagePath, unlocked?1:0, sortOrder);
+    res.json({ ok:true, id: info.lastInsertRowid });
+  });
+  router.post('/decks/:id/unlock', (req, res) => {
+    db.prepare('UPDATE decks SET unlocked = ? WHERE id = ?').run(req.body && req.body.unlocked ? 1 : 0, Number(req.params.id));
+    if (app.locals.io) app.locals.io.emit('decks:changed', {});
+    res.json({ ok: true });
+  });
+
   return router;
 };
