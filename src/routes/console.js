@@ -5,6 +5,7 @@ const { buildDelivery } = require('../delivery');
 const { insertDelivery, currentPhase } = require('../store');
 const { emitDelivery } = require('../sockets');
 const { themeForPhase, lockedApps } = require('../phase');
+const deckstore = require('../deckstore');
 
 module.exports = (app) => {
   const router = express.Router();
@@ -123,6 +124,61 @@ module.exports = (app) => {
   router.post('/cutscene', (req, res) => {
     const name = String(req.body && req.body.name || 'window');
     if (app.locals.io) app.locals.io.emit('cutscene', { name });
+    res.json({ ok: true });
+  });
+
+  function emitDeckPin(deckId) {
+    if (app.locals.io) app.locals.io.emit('deck:pin', { deckId });
+  }
+
+  router.get('/pins', (req, res) => {
+    res.json({ pins: deckstore.listPinsRaw(db, Number(req.query.deckId)) });
+  });
+
+  router.post('/pins', (req, res) => {
+    const { deckId, x, y, truthLabel = null, lieLabel = null, phaseGate = null, poiType = 'generic' } = req.body || {};
+    if (deckId == null || x == null || y == null) return res.status(400).json({ error: 'deckId, x, y required' });
+    const id = deckstore.insertPin(db, {
+      deck_id: deckId, x, y, truth_label: truthLabel, lie_label: lieLabel, phase_gate: phaseGate, poi_type: poiType,
+    });
+    emitDeckPin(deckId);
+    res.json({ ok: true, id });
+  });
+
+  router.post('/pins/:id', (req, res) => {
+    deckstore.updatePin(db, Number(req.params.id), req.body || {});
+    const row = db.prepare('SELECT deck_id FROM pins WHERE id = ?').get(Number(req.params.id));
+    if (row) emitDeckPin(row.deck_id);
+    res.json({ ok: true });
+  });
+
+  router.post('/pins/:id/flip', (req, res) => {
+    const next = deckstore.flipPin(db, Number(req.params.id));
+    if (next === null) return res.status(404).json({ error: 'no such pin' });
+    const row = db.prepare('SELECT deck_id FROM pins WHERE id = ?').get(Number(req.params.id));
+    if (row) emitDeckPin(row.deck_id);
+    res.json({ ok: true, state: next });
+  });
+
+  router.delete('/pins/:id', (req, res) => {
+    const row = db.prepare('SELECT deck_id FROM pins WHERE id = ?').get(Number(req.params.id));
+    deckstore.deletePin(db, Number(req.params.id));
+    if (row) emitDeckPin(row.deck_id);
+    res.json({ ok: true });
+  });
+
+  router.post('/party', (req, res) => {
+    const { deckId, x, y } = req.body || {};
+    if (deckId == null || x == null || y == null) return res.status(400).json({ error: 'deckId, x, y required' });
+    deckstore.setParty(db, deckId, x, y);
+    if (app.locals.io) app.locals.io.emit('deck:party', { deckId, x, y });
+    res.json({ ok: true });
+  });
+
+  router.post('/decks/:id/map', (req, res) => {
+    const map = req.body && req.body.map ? JSON.stringify(req.body.map) : null;
+    db.prepare('UPDATE decks SET map_json = ? WHERE id = ?').run(map, Number(req.params.id));
+    if (app.locals.io) app.locals.io.emit('decks:changed', {});
     res.json({ ok: true });
   });
 
