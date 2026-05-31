@@ -93,7 +93,17 @@ function nameOf(id){ const c=s.characters.find(x=>x.id===id); return c?c.name:'â
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // phasebar + library are filled in later tasks; define stubs so render works
-function renderPhasebar(){ const el=document.getElementById('phasebar'); if(el) el.innerHTML=''; }
+async function renderPhasebar() {
+  const el = document.getElementById('phasebar'); if (!el) return;
+  const { phase } = await (await fetch('/api/console/phase')).json();
+  el.innerHTML = '<span style="margin-right:8px;color:#8fb3aa">Phase</span>' +
+    [1,2,3,4,5].map(p => `<button class="${p===phase?'cur':''}" onclick="window._setPhase(${p})">${p}</button>`).join('');
+}
+window._setPhase = async (p) => {
+  await fetch('/api/console/phase', { method:'POST', headers:{'content-type':'application/json'},
+    body: JSON.stringify({ phase: p }) });
+  renderPhasebar();
+};
 async function renderLibrary() {
   const el = document.getElementById('lib'); if (!el) return;
   const { messages } = await (await fetch('/api/console/messages')).json();

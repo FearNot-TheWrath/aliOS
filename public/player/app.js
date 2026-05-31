@@ -59,7 +59,12 @@ function connectSocket() {
     notify(d);
     if (state.view !== 'idle') render();
   });
-  socket.on('phase', ({ phase }) => { state.phase = phase; applyPhase(); render(); });
+  socket.on('phase', ({ phase, locked }) => {
+    state.phase = phase;
+    state.locked = locked || [];
+    applyPhase();
+    render();
+  });
 }
 
 function notify(d) {
@@ -115,6 +120,10 @@ window._back = () => { state.view = 'home'; render(); };
 
 function renderApp(key) {
   const back = `<span class="backbar" onclick="window._back()">‹ Home</span>`;
+  if ((state.locked || []).includes(key)) {
+    root.innerHTML = `<div class="screen">${back}<div class="locked">\u{1F512} A.L.I. has restricted this.</div></div>`;
+    return;
+  }
   if (key === 'messages') return renderMessages(back);
   if (key === 'allie') return renderAllie(back);
   if (key === 'archive') return renderArchive(back);

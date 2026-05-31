@@ -4,6 +4,7 @@ const { requireRole } = require('../middleware');
 const { buildDelivery } = require('../delivery');
 const { insertDelivery, currentPhase } = require('../store');
 const { emitDelivery } = require('../sockets');
+const { themeForPhase, lockedApps } = require('../phase');
 
 module.exports = (app) => {
   const router = express.Router();
@@ -106,6 +107,17 @@ module.exports = (app) => {
     db.prepare('UPDATE decks SET unlocked = ? WHERE id = ?').run(req.body && req.body.unlocked ? 1 : 0, Number(req.params.id));
     if (app.locals.io) app.locals.io.emit('decks:changed', {});
     res.json({ ok: true });
+  });
+
+  router.get('/phase', (req, res) => {
+    const phase = db.prepare('SELECT current_phase FROM game_state WHERE id=1').get().current_phase;
+    res.json({ phase });
+  });
+  router.post('/phase', (req, res) => {
+    const phase = Math.max(1, Math.min(5, Number(req.body && req.body.phase) || 1));
+    db.prepare('UPDATE game_state SET current_phase = ? WHERE id = 1').run(phase);
+    if (app.locals.io) app.locals.io.emit('phase', { phase, theme: themeForPhase(phase), locked: lockedApps(phase) });
+    res.json({ ok: true, phase });
   });
 
   return router;

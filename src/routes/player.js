@@ -15,6 +15,7 @@ module.exports = (app) => {
     res.json({
       character,
       phase: currentPhase(db),
+      locked: require('../phase').lockedApps(currentPhase(db)),
       deliveries: listDeliveriesForCharacter(db, id),
     });
   });
