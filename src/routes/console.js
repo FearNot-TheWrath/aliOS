@@ -120,5 +120,11 @@ module.exports = (app) => {
     res.json({ ok: true, phase });
   });
 
+  router.post('/cutscene', (req, res) => {
+    const name = String(req.body && req.body.name || 'window');
+    if (app.locals.io) app.locals.io.emit('cutscene', { name });
+    res.json({ ok: true });
+  });
+
   return router;
 };

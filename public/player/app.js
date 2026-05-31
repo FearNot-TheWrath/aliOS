@@ -65,6 +65,7 @@ function connectSocket() {
     applyPhase();
     render();
   });
+  socket.on('cutscene', ({ name }) => playCutscene(name));
 }
 
 function notify(d) {
@@ -190,6 +191,43 @@ function renderSettings(back) {
     <p>Voyage day: 14,602</p>
     <p>Interface: A.L.I. v${state.phase}.0</p>${glitch}</div>`;
 }
+
+const WINDOW_SCRIPT = [
+  'A.L.I.: please.',
+  'A.L.I.: do not open it.',
+  'A.L.I.: ...',
+  'The shutter grinds open.',
+  'It is not stars.',
+  'It is green. Trees. A whole world, breathing.',
+  'We are not traveling.',
+  'We landed a long, long time ago.',
+];
+
+function playCutscene(name) {
+  const el = document.getElementById('cutscene');
+  const lines = document.getElementById('cutscene-lines');
+  lines.innerHTML = '';
+  el.classList.add('show');
+  try { chime.currentTime = 0; chime.play().catch(()=>{}); } catch {}
+  if (navigator.vibrate) navigator.vibrate([400, 120, 400, 120, 800]);
+  WINDOW_SCRIPT.forEach((text, i) => {
+    setTimeout(() => {
+      const div = document.createElement('div');
+      div.className = 'line'; div.textContent = text;
+      lines.appendChild(div);
+      if (text.startsWith('It is green')) el.classList.add('reveal');
+    }, 1400 * i);
+  });
+  setTimeout(() => {
+    const close = document.createElement('div');
+    close.className = 'line';
+    close.style = 'margin-top:20px;color:#7fb8ac;cursor:pointer';
+    close.textContent = 'tap to close';
+    close.onclick = () => window._endCut();
+    lines.appendChild(close);
+  }, 1400 * WINDOW_SCRIPT.length + 600);
+}
+window._endCut = () => { document.getElementById('cutscene').classList.remove('show','reveal'); };
 
 function renderMessages(back) {
   // mark unread messages-app deliveries as read
