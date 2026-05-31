@@ -104,7 +104,7 @@ function renderHome() {
     </div>`).join('');
   root.innerHTML = `<div class="screen">
     <div class="statusbar"><span>7:02</span><span>A.L.I.</span><span>84%</span></div>
-    <div style="text-align:center;margin-top:14px;color:var(--muted)">Good morning, ${state.character.name}</div>
+    <div style="text-align:center;margin-top:14px;color:var(--muted)">Good morning, ${escapeHtml(state.character.name)}</div>
     <div class="grid">${tiles}</div>
   </div>`;
 }

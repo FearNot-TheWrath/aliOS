@@ -42,7 +42,7 @@ function renderSide() {
   const side = document.getElementById('side'); if (!side) return;
   side.innerHTML = `<h3>Crew</h3>` + s.characters.map(c => `
     <div class="crew ${c.id===s.selected?'active':''}" onclick="window._sel(${c.id})">
-      <div>${c.name} ${c.unread?`<span style="color:#ff9f43">(${c.unread})</span>`:''}
+      <div>${escapeHtml(c.name)} ${c.unread?`<span style="color:#ff9f43">(${c.unread})</span>`:''}
         ${c.lastRead===null?'':`<span class="dot ${c.lastRead?'read':'unread'}"></span>`}</div>
       <div class="meta">${c.lastBody?escapeHtml(c.lastBody).slice(0,40):'no messages yet'}</div>
     </div>`).join('');
@@ -50,7 +50,7 @@ function renderSide() {
 
 function renderMain() {
   const main = document.getElementById('main'); if (!main) return;
-  const senderOpts = s.senders.map(x => `<option value="${x.id}">${x.name}${x.is_allie?' (Allie)':''}</option>`).join('');
+  const senderOpts = s.senders.map(x => `<option value="${x.id}">${escapeHtml(x.name)}${x.is_allie?' (Allie)':''}</option>`).join('');
   main.innerHTML = `
     <div class="row">
       <button onclick="window._view('send')">Send</button>
@@ -58,7 +58,7 @@ function renderMain() {
       <button onclick="window._view('decks')">Decks</button>
     </div>
     <div class="phasebar" id="phasebar"></div>
-    <h3>Send to ${nameOf(s.selected)}</h3>
+    <h3>Send to ${escapeHtml(nameOf(s.selected))}</h3>
     <div class="row">
       <select id="sender">${senderOpts}</select>
       <select id="app">
@@ -101,7 +101,7 @@ async function renderLibrary() {
       <button onclick="window._newLib()">+ New line</button>
     </div>` + messages.map(m => `
     <div class="lib-item" onclick="window._fire(${m.id})">
-      <strong>${m.sender_name}</strong> <span style="color:#8fb3aa">[${m.app}${m.phase_gate?` · P${m.phase_gate}+`:''}]</span><br>
+      <strong>${escapeHtml(m.sender_name)}</strong> <span style="color:#8fb3aa">[${m.app}${m.phase_gate?` · P${m.phase_gate}+`:''}]</span><br>
       ${escapeHtml(m.body)}
       <span style="float:right;color:#ff7a7a" onclick="event.stopPropagation();window._delLib(${m.id})">delete</span>
     </div>`).join('');
