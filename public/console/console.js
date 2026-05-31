@@ -176,18 +176,109 @@ window._toggleRedact = async (id, redacted) => {
   renderArchiveEditor();
 };
 
+let _deckEdit = { deckId: null, mode: 'party', phase: 1 };
+
 async function renderDecksEditor() {
   const main = document.getElementById('main'); if (!main) return;
-  const { decks } = await (await fetch('/api/console/decks')).json();
-  main.innerHTML = `<div class="row">
+  const nav = `<div class="row">
       <button onclick="window._view('send')">Send</button>
       <button onclick="window._view('archive')">Archive</button>
-      <button onclick="window._view('decks')">Decks</button></div>
+      <button onclick="window._view('decks')">Decks</button></div>`;
+  const { decks } = await (await fetch('/api/console/decks')).json();
+  const phaseResp = await (await fetch('/api/console/phase')).json();
+  _deckEdit.phase = phaseResp.phase;
+  if (_deckEdit.deckId == null && decks[0]) _deckEdit.deckId = decks[0].id;
+  const deck = decks.find((d) => d.id === _deckEdit.deckId) || decks[0];
+
+  const deckTabs = decks.map((d) =>
+    `<button class="${d.id===_deckEdit.deckId?'cur':''}" onclick="window._deckPick(${d.id})">${escapeHtml(d.name)}${d.unlocked?'':' \u{1F512}'}</button>`).join(' ');
+
+  const U = deck ? unreliabilityClient(_deckEdit.phase, deck.sort_order) : 0;
+  const map = deck && deck.map_json ? JSON.parse(deck.map_json) : null;
+  const inner = (map && window.Schematic) ? window.Schematic.schematicSvg(map) : '';
+
+  main.innerHTML = `${nav}
     <h3>Decks</h3>
-    <div class="row"><input id="dn" placeholder="deck name"/><button class="primary" onclick="window._addDeck()">Add</button></div>
-    ${decks.map(d => `<div class="lib-item">${escapeHtml(d.name)}: ${d.unlocked?'unlocked':'sealed'}
-      <button onclick="window._unlock(${d.id}, ${d.unlocked?0:1})">${d.unlocked?'seal':'unlock'}</button></div>`).join('')}`;
+    <div class="row"><input id="dn" placeholder="new deck name"/><button class="primary" onclick="window._addDeck()">Add</button></div>
+    <div class="phasebar">${deckTabs}</div>
+    <div class="row" style="margin-top:8px">
+      <strong>${deck?escapeHtml(deck.name):'—'}</strong>
+      <button onclick="window._unlock(${deck?deck.id:0}, ${deck&&deck.unlocked?0:1})">${deck&&deck.unlocked?'seal':'unlock'}</button>
+      <span style="color:#8fb3aa">players see unreliability ${Math.round(U*100)}%</span>
+    </div>
+    <div class="row">
+      <button class="${_deckEdit.mode==='party'?'cur':''}" onclick="window._deckMode('party')">Place party</button>
+      <button class="${_deckEdit.mode==='poi'?'cur':''}" onclick="window._deckMode('poi')">Drop POI</button>
+    </div>
+    <svg id="deckmap" viewBox="0 0 1000 1000" style="width:100%;max-width:420px;background:#0c1f1c;border:1px solid #214039;border-radius:10px;cursor:crosshair" onclick="window._deckMapClick(event)">
+      ${inner}<g id="dm-overlay"></g>
+    </svg>
+    <h4>Points of interest (truth shown to you)</h4>
+    <div id="deckpins"></div>`;
+  renderDeckOverlay();
 }
+
+// the console computes U with the same formula as the server (small mirror)
+function unreliabilityClient(phase, depth) {
+  const p = Math.max(1, Math.min(5, phase)), d = Math.max(1, depth);
+  const u = 0.6 * ((p - 1) / 4) + 0.4 * ((d - 1) / 5);
+  return Math.max(0, Math.min(1, u));
+}
+
+async function renderDeckOverlay() {
+  if (_deckEdit.deckId == null) return;
+  const { pins } = await (await fetch(`/api/console/pins?deckId=${_deckEdit.deckId}`)).json();
+  const overlay = document.getElementById('dm-overlay');
+  if (overlay) {
+    overlay.innerHTML = pins.map((p) => {
+      const color = p.state === 'hidden' ? '#6e4a57' : p.state === 'lie' ? '#b85a6a' : '#7a8cff';
+      const label = p.truth_label || p.lie_label || '';
+      return `<g style="cursor:pointer" onclick="event.stopPropagation();window._flipPin(${p.id})">
+        <circle cx="${p.x*1000}" cy="${p.y*1000}" r="13" fill="${color}"/>
+        <text x="${p.x*1000}" y="${p.y*1000+34}" fill="#cfe8e2" font-size="22" text-anchor="middle">${escapeHtml(label)} [${p.state}]</text></g>`;
+    }).join('');
+  }
+  const listEl = document.getElementById('deckpins');
+  if (listEl) {
+    listEl.innerHTML = pins.map((p) => `<div class="lib-item">
+      <strong>${escapeHtml(p.truth_label || '(decoy)')}</strong> -> lie: ${escapeHtml(p.lie_label || '—')}
+      ${p.phase_gate?`(auto-lies at P${p.phase_gate})`:''} [${p.state}]
+      <button onclick="window._flipPin(${p.id})">flip</button>
+      <button onclick="window._delPin(${p.id})">delete</button>
+    </div>`).join('') || '<p style="color:#8fb3aa">No points yet.</p>';
+  }
+}
+
+window._deckPick = (id) => { _deckEdit.deckId = id; renderDecksEditor(); };
+window._deckMode = (m) => { _deckEdit.mode = m; renderDecksEditor(); };
+
+window._deckMapClick = async (ev) => {
+  const svg = document.getElementById('deckmap');
+  const rect = svg.getBoundingClientRect();
+  const x = (ev.clientX - rect.left) / rect.width;
+  const y = (ev.clientY - rect.top) / rect.height;
+  if (_deckEdit.mode === 'party') {
+    await fetch('/api/console/party', { method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({ deckId: _deckEdit.deckId, x, y }) });
+  } else {
+    const truth = prompt('True label for this point (blank = decoy):') || '';
+    const lie = prompt('What does Allie show instead (the lie)? (blank = none):') || '';
+    const gateRaw = prompt('Auto-lie starting at which phase? (1-5, blank = manual only):') || '';
+    const phaseGate = gateRaw ? Math.max(1, Math.min(5, Number(gateRaw))) : null;
+    await fetch('/api/console/pins', { method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({ deckId: _deckEdit.deckId, x, y, truthLabel: truth || null, lieLabel: lie || null, phaseGate, poiType: 'generic' }) });
+  }
+  renderDeckOverlay();
+};
+
+window._flipPin = async (id) => {
+  await fetch(`/api/console/pins/${id}/flip`, { method:'POST' });
+  renderDeckOverlay();
+};
+window._delPin = async (id) => {
+  await fetch(`/api/console/pins/${id}`, { method:'DELETE' });
+  renderDeckOverlay();
+};
 window._addDeck = async () => {
   await fetch('/api/console/decks', { method:'POST', headers:{'content-type':'application/json'},
     body: JSON.stringify({ name: document.getElementById('dn').value }) });
