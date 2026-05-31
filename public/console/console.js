@@ -81,6 +81,31 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<'
 
 // phasebar + library are filled in later tasks; define stubs so render works
 function renderPhasebar(){ const el=document.getElementById('phasebar'); if(el) el.innerHTML=''; }
-function renderLibrary(){ const el=document.getElementById('lib'); if(el) el.innerHTML='<p style="color:#8fb3aa">Library coming up.</p>'; }
+async function renderLibrary() {
+  const el = document.getElementById('lib'); if (!el) return;
+  const { messages } = await (await fetch('/api/console/messages')).json();
+  el.innerHTML = `<div class="row">
+      <button onclick="window._newLib()">+ New line</button>
+    </div>` + messages.map(m => `
+    <div class="lib-item" onclick="window._fire(${m.id})">
+      <strong>${m.sender_name}</strong> <span style="color:#8fb3aa">[${m.app}${m.phase_gate?` · P${m.phase_gate}+`:''}]</span><br>
+      ${escapeHtml(m.body)}
+      <span style="float:right;color:#ff7a7a" onclick="event.stopPropagation();window._delLib(${m.id})">delete</span>
+    </div>`).join('');
+}
+
+window._fire = async (messageId) => {
+  await fetch('/api/console/send', { method:'POST', headers:{'content-type':'application/json'},
+    body: JSON.stringify({ characterId: s.selected, messageId }) });
+};
+window._delLib = async (id) => { await fetch(`/api/console/messages/${id}`, { method:'DELETE' }); renderLibrary(); };
+window._newLib = async () => {
+  const body = prompt('Line text:'); if (!body) return;
+  const senderId = Number(document.getElementById('sender').value);
+  const app = document.getElementById('app').value;
+  await fetch('/api/console/messages', { method:'POST', headers:{'content-type':'application/json'},
+    body: JSON.stringify({ senderId, app, body }) });
+  renderLibrary();
+};
 
 boot();

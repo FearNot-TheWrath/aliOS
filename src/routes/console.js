@@ -51,5 +51,25 @@ module.exports = (app) => {
     res.json({ senders: db.prepare('SELECT id, name, is_allie FROM senders ORDER BY is_allie DESC, name').all() });
   });
 
+  router.get('/messages', (req, res) => {
+    res.json({ messages: db.prepare(
+      `SELECT m.*, s.name AS sender_name FROM messages m JOIN senders s ON s.id = m.sender_id
+       ORDER BY m.sort_order, m.id`).all() });
+  });
+
+  router.post('/messages', (req, res) => {
+    const { senderId, app: a = 'messages', body, imagePath = null, phaseGate = null, label = null } = req.body || {};
+    if (!body || !String(body).trim()) return res.status(400).json({ error: 'body required' });
+    const info = db.prepare(
+      `INSERT INTO messages (sender_id, app, body, image_path, phase_gate, label)
+       VALUES (?,?,?,?,?,?)`).run(senderId, a, body, imagePath, phaseGate, label);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+
+  router.delete('/messages/:id', (req, res) => {
+    db.prepare('DELETE FROM messages WHERE id = ?').run(Number(req.params.id));
+    res.json({ ok: true });
+  });
+
   return router;
 };
