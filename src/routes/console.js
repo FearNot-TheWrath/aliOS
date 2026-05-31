@@ -33,5 +33,23 @@ module.exports = (app) => {
     res.json({ ok: true, delivery });
   });
 
+  router.get('/roster', (req, res) => {
+    const chars = db.prepare('SELECT id, name FROM characters ORDER BY sort_order').all();
+    const withCounts = chars.map((c) => {
+      const last = db.prepare(
+        'SELECT body, sent_at, read_at FROM deliveries WHERE character_id = ? ORDER BY sent_at DESC LIMIT 1'
+      ).get(c.id);
+      const unread = db.prepare(
+        'SELECT count(*) n FROM deliveries WHERE character_id = ? AND read_at IS NULL'
+      ).get(c.id).n;
+      return { ...c, lastBody: last ? last.body : null, lastRead: last ? !!last.read_at : null, unread };
+    });
+    res.json({ characters: withCounts });
+  });
+
+  router.get('/senders', (req, res) => {
+    res.json({ senders: db.prepare('SELECT id, name, is_allie FROM senders ORDER BY is_allie DESC, name').all() });
+  });
+
   return router;
 };
