@@ -25,9 +25,11 @@ function buildApp(opts = {}) {
   app.use('/api', require('./src/routes/player')(app));
   app.use('/api/console', require('./src/routes/console')(app));
   app.use('/api/uploads', require('./src/routes/uploads')(app));
+  app.use('/api', require('./src/routes/chronicle')(app));
 
   // static front ends
   app.use('/shared', express.static(path.join(__dirname, 'public/shared')));
+  app.use('/chronicle', express.static(path.join(__dirname, 'public/chronicle')));
   app.use('/console', express.static(path.join(__dirname, 'public/console')));
   app.use('/', express.static(path.join(__dirname, 'public/player')));
 
