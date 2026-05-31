@@ -13,8 +13,8 @@ npm install
 npm test
 npm start
 ```
-Player app: http://localhost:3007
-DM console: http://localhost:3007/console  (parent PIN, default 1234)
+Player app: http://localhost:3017
+DM console: http://localhost:3017/console  (parent PIN, default 1234)
 
 ## How it fits together
 - Players log in by tapping their character and entering a PIN you hand out.
@@ -39,7 +39,7 @@ DM console: http://localhost:3007/console  (parent PIN, default 1234)
 3. Add a Cloudflare Tunnel ingress rule in /etc/cloudflared/config.yml:
    ```
    - hostname: alios.playdnd.online
-     service: http://localhost:3007
+     service: http://localhost:3017
    ```
    then restart: `sudo systemctl restart cloudflared`
 4. Add a CNAME for alios pointing at the tunnel.
