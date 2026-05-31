@@ -70,6 +70,8 @@ function connectSocket() {
   });
   socket.on('cutscene', ({ name }) => playCutscene(name));
   socket.on('decks:changed', () => { if (state.view === 'decks') render(); });
+  socket.on('deck:pin', () => { if (state.view === 'decks') render(); });
+  socket.on('deck:party', () => { if (state.view === 'decks') render(); });
 }
 
 function notify(d) {
@@ -180,12 +182,37 @@ function renderPhotos(back) {
 
 async function renderDecks(back) {
   root.innerHTML = `<div class="screen">${back}<h2>Decks</h2><div id="decks">loading…</div></div>`;
-  const { decks } = await (await fetch('/api/decks')).json();
-  document.getElementById('decks').innerHTML = decks.length ? decks.map(d => `
-    <div class="bubble" style="opacity:${d.unlocked?1:0.4}">
-      <div class="who">${d.unlocked?'':'\u{1F512} '}${escapeHtml(d.name)}</div>
-      ${d.unlocked && d.image_path ? `<img src="${d.image_path}" alt="" />` : (d.unlocked?'':'Sealed.')}
-    </div>`).join('') : '<p style="color:var(--muted)">No deck data.</p>';
+  const data = await (await fetch('/api/decks')).json();
+  const list = data.decks.map((d) => {
+    if (!d.unlocked) {
+      return `<div class="bubble" style="opacity:.4"><div class="who">\u{1F512} ${escapeHtml(d.name)}</div>Sealed.</div>`;
+    }
+    return `<div class="bubble"><div class="who">${escapeHtml(d.name)}${d.U >= 0.5 ? ' <span style="color:#b85a6a">signal weak</span>' : ''}</div>
+      ${deckMapSvg(d)}</div>`;
+  }).join('');
+  document.getElementById('decks').innerHTML = list || '<p style="color:var(--muted)">No deck data.</p>';
+}
+
+function deckMapSvg(d) {
+  const inner = window.Schematic ? window.Schematic.schematicSvg(d.map) : '';
+  const fog = (d.fog || []).map((f) =>
+    `<circle cx="${f.x*1000}" cy="${f.y*1000}" r="${f.radius*1000}" fill="#160b12" opacity="${f.opacity}"/>`).join('');
+  const pins = (d.pins || []).map((p) => {
+    if (p.obscured) {
+      return `<g><circle cx="${p.x*1000}" cy="${p.y*1000}" r="14" fill="none" stroke="#6e4a57" stroke-dasharray="4 4"/>
+        <text x="${p.x*1000}" y="${p.y*1000+34}" fill="#6e4a57" font-size="22" text-anchor="middle">?</text></g>`;
+    }
+    const color = p.poi_type === 'core' ? '#c9b25a' : p.poi_type === 'hazard' ? '#b85a6a' : '#7a8cff';
+    return `<g><circle cx="${p.x*1000}" cy="${p.y*1000}" r="12" fill="${color}"/>
+      <text x="${p.x*1000}" y="${p.y*1000+34}" fill="#9fb0ff" font-size="22" text-anchor="middle">${window.Schematic.esc(p.label || '')}</text></g>`;
+  }).join('');
+  const party = d.party
+    ? `<g><circle cx="${d.party.x*1000}" cy="${d.party.y*1000}" r="26" fill="#3ad29f" opacity=".25"/>
+       <circle cx="${d.party.x*1000}" cy="${d.party.y*1000}" r="12" fill="#3ad29f"/>
+       <text x="${d.party.x*1000}" y="${d.party.y*1000-22}" fill="#bfffe9" font-size="22" text-anchor="middle">you</text></g>`
+    : '';
+  return `<svg viewBox="0 0 1000 1000" style="width:100%;background:#0c1f1c;border:1px solid #214039;border-radius:10px">
+    ${inner}${fog}${pins}${party}</svg>`;
 }
 
 function renderSettings(back) {
