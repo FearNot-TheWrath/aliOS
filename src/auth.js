@@ -27,8 +27,10 @@ function issueToken(claims, secret) {
 }
 
 function readToken(token, secret) {
-  if (typeof token !== 'string' || !token.includes('.')) return null;
-  const [payload, sig] = token.split('.');
+  if (typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+  const [payload, sig] = parts;
   const expected = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
   if (sig.length !== expected.length) return null;
   if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;

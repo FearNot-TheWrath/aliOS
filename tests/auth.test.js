@@ -25,4 +25,6 @@ test('token round trips character id and role', () => {
   assert.strictEqual(claims.characterId, 7);
   assert.strictEqual(readToken('garbage', 'secret'), null);
   assert.strictEqual(readToken(t, 'wrong-secret'), null);
+  const t2 = issueToken({ role: 'player', characterId: 7 }, 'secret');
+  assert.strictEqual(readToken(t2 + '.JUNK', 'secret'), null);
 });
