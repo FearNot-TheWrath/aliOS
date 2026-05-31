@@ -62,6 +62,7 @@ function renderMain() {
       </select>
     </div>
     <div class="row"><textarea id="body" rows="3" style="flex:1" placeholder="Type a line..."></textarea></div>
+    <div class="row"><input type="file" id="img" accept="image/*" /></div>
     <div class="row"><button class="primary" onclick="window._send()">Send</button></div>
     <h3>Library</h3><div id="lib"></div>`;
   renderPhasebar(); renderLibrary();
@@ -69,11 +70,18 @@ function renderMain() {
 
 window._sel = (id) => { s.selected = id; renderSide(); renderMain(); };
 window._send = async () => {
-  const body = document.getElementById('body').value.trim(); if (!body) return;
+  const body = document.getElementById('body').value.trim();
+  const fileEl = document.getElementById('img');
+  let imagePath = null;
+  if (fileEl && fileEl.files[0]) {
+    const fd = new FormData(); fd.append('image', fileEl.files[0]);
+    imagePath = (await (await fetch('/api/uploads', { method:'POST', body: fd })).json()).path;
+  }
+  if (!body && !imagePath) return;
   await fetch('/api/console/send', { method:'POST', headers:{'content-type':'application/json'},
     body: JSON.stringify({ characterId: s.selected, senderId: Number(document.getElementById('sender').value),
-      app: document.getElementById('app').value, body }) });
-  document.getElementById('body').value = '';
+      app: document.getElementById('app').value, body: body || ' ', imagePath }) });
+  document.getElementById('body').value = ''; if (fileEl) fileEl.value = '';
 };
 
 function nameOf(id){ const c=s.characters.find(x=>x.id===id); return c?c.name:'—'; }
