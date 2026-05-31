@@ -1,4 +1,7 @@
 // public/player/app.js
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
 const root = document.getElementById('app');
 const chime = document.getElementById('chime');
 let state = { character: null, phase: 1, deliveries: [], view: 'idle' };
