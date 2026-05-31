@@ -27,6 +27,7 @@ function buildApp(opts = {}) {
   app.use('/api/uploads', require('./src/routes/uploads')(app));
 
   // static front ends
+  app.use('/shared', express.static(path.join(__dirname, 'public/shared')));
   app.use('/console', express.static(path.join(__dirname, 'public/console')));
   app.use('/', express.static(path.join(__dirname, 'public/player')));
 
