@@ -69,6 +69,7 @@ function connectSocket() {
     render();
   });
   socket.on('cutscene', ({ name }) => playCutscene(name));
+  socket.on('decks:changed', () => { if (state.view === 'decks') render(); });
 }
 
 function notify(d) {

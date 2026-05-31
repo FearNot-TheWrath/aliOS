@@ -45,12 +45,8 @@ function emitDelivery(io, characterId, delivery) {
   io.to(CONSOLE_ROOM).emit('delivery:sent', { characterId, delivery });
 }
 
-function emitPhase(io, phase, theme) {
-  io.emit('phase', { phase, theme });
-}
-
 function emitRead(io, characterId, deliveryId) {
   io.to(CONSOLE_ROOM).emit('delivery:read', { characterId, deliveryId });
 }
 
-module.exports = { attach, emitDelivery, emitPhase, emitRead, roomForCharacter, CONSOLE_ROOM };
+module.exports = { attach, emitDelivery, emitRead, roomForCharacter, CONSOLE_ROOM };

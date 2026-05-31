@@ -14,7 +14,6 @@ const ALLIE_TONE = {
 // which player apps are locked at a given phase
 function lockedApps(phase) {
   if (phase >= 4) return ['archive', 'decks'];
-  if (phase >= 2) return [];
   return [];
 }
 
