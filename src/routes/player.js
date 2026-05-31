@@ -26,5 +26,20 @@ module.exports = (app) => {
     res.json({ ok });
   });
 
+  router.get('/archive', guard, (req, res) => {
+    const q = `%${String(req.query.q || '').trim().toLowerCase()}%`;
+    const phase = currentPhase(db);
+    const rows = db.prepare(
+      `SELECT * FROM archive_entries
+       WHERE lower(keyword) LIKE ? AND (phase_gate IS NULL OR phase_gate <= ?)
+       ORDER BY keyword`).all(q, phase);
+    const results = rows.map((r) => ({
+      keyword: r.keyword,
+      redacted: !!r.redacted,
+      response: r.redacted ? 'ACCESS DENIED. Clearance insufficient.' : r.response,
+    }));
+    res.json({ results });
+  });
+
   return router;
 };

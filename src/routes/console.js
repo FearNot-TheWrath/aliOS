@@ -71,5 +71,25 @@ module.exports = (app) => {
     res.json({ ok: true });
   });
 
+  router.get('/archive', (req, res) => {
+    res.json({ entries: db.prepare('SELECT * FROM archive_entries ORDER BY keyword').all() });
+  });
+  router.post('/archive', (req, res) => {
+    const { id, keyword, response, redacted = 0, phaseGate = null } = req.body || {};
+    if (id) {
+      db.prepare('UPDATE archive_entries SET keyword=?, response=?, redacted=?, phase_gate=? WHERE id=?')
+        .run(keyword, response, redacted ? 1 : 0, phaseGate, id);
+      return res.json({ ok: true, id });
+    }
+    const info = db.prepare('INSERT INTO archive_entries (keyword, response, redacted, phase_gate) VALUES (?,?,?,?)')
+      .run(keyword, response, redacted ? 1 : 0, phaseGate);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.post('/archive/:id/redact', (req, res) => {
+    db.prepare('UPDATE archive_entries SET redacted = ? WHERE id = ?')
+      .run(req.body && req.body.redacted ? 1 : 0, Number(req.params.id));
+    res.json({ ok: true });
+  });
+
   return router;
 };
