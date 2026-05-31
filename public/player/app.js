@@ -114,10 +114,34 @@ window._open = (key) => { state.view = key; render(); };
 window._back = () => { state.view = 'home'; render(); };
 
 function renderApp(key) {
-  root.innerHTML = `<div class="screen">
-    <span class="backbar" onclick="window._back()">‹ Home</span>
-    <h2>${key}</h2><p style="color:var(--muted)">Coming up next task.</p>
-  </div>`;
+  const back = `<span class="backbar" onclick="window._back()">‹ Home</span>`;
+  if (key === 'messages') return renderMessages(back);
+  // other apps implemented in Milestone 6; show a calm placeholder for now
+  root.innerHTML = `<div class="screen">${back}<h2 style="text-transform:capitalize">${key}</h2>
+    <p style="color:var(--muted)">Nothing here yet.</p></div>`;
+}
+
+function renderMessages(back) {
+  // mark unread messages-app deliveries as read
+  state.deliveries.filter(d => d.app === 'messages' && !d.read_at).forEach(markReadNow);
+  const items = state.deliveries.filter(d => d.app === 'messages').map(d => `
+    <div class="bubble">
+      <div class="who">${escapeHtml(d.sender_name || 'Unknown')}</div>
+      <div>${escapeHtml(d.body)}</div>
+      ${d.image_path ? `<img src="${d.image_path}" alt="" />` : ''}
+    </div>`).join('');
+  root.innerHTML = `<div class="screen">${back}<h2>Messages</h2>
+    <div class="thread">${items || '<p style="color:var(--muted)">No messages.</p>'}</div></div>`;
+}
+
+async function markReadNow(d) {
+  if (d.read_at) return;
+  d.read_at = Date.now();
+  try { await fetch(`/api/read/${d.id}`, { method: 'POST' }); } catch {}
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
 boot();
