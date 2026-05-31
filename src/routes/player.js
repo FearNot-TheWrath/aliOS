@@ -3,6 +3,9 @@ const express = require('express');
 const { requireRole } = require('../middleware');
 const { listDeliveriesForCharacter, markRead, currentPhase } = require('../store');
 const { emitRead } = require('../sockets');
+const { unreliability, driftOffset, fogPatches, clamp01 } = require('../unreliability');
+const { effectiveState, displayPin } = require('../pins');
+const deckstore = require('../deckstore');
 
 module.exports = (app) => {
   const router = express.Router();
@@ -43,7 +46,26 @@ module.exports = (app) => {
   });
 
   router.get('/decks', guard, (req, res) => {
-    res.json({ decks: db.prepare('SELECT id, name, image_path, unlocked FROM decks ORDER BY sort_order').all() });
+    const phase = currentPhase(db);
+    const party = deckstore.getParty(db);
+    const decks = deckstore.listDecksRaw(db).map((d) => {
+      const depth = d.sort_order;
+      const out = { id: d.id, name: d.name, depth, unlocked: !!d.unlocked };
+      if (!d.unlocked) return out; // sealed decks expose nothing
+      const U = unreliability(phase, depth);
+      out.U = U;
+      out.map = d.map_json ? JSON.parse(d.map_json) : null;
+      out.fog = fogPatches(d.id, U);
+      out.pins = deckstore.listPinsRaw(db, d.id).map((p) => displayPin(p, effectiveState(p, phase)));
+      if (party.party_deck_id === d.id && party.party_x != null) {
+        const off = driftOffset(d.id * 100 + phase, U);
+        out.party = { x: clamp01(party.party_x + off.dx), y: clamp01(party.party_y + off.dy) };
+      } else {
+        out.party = null;
+      }
+      return out;
+    });
+    res.json({ phase, decks });
   });
 
   return router;
