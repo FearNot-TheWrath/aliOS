@@ -14,6 +14,9 @@ test('themeForPhase returns a theme object for 1..5', () => {
 test('locks grow as phase climbs', () => {
   assert.strictEqual(lockedApps(1).length, 0);
   assert.ok(lockedApps(4).length >= lockedApps(2).length);
+  assert.ok(!lockedApps(4).includes('decks'), 'Decks stays open at high phase (the map lies, it does not lock)');
+  assert.ok(!lockedApps(5).includes('decks'), 'Decks open at phase 5 too');
+  assert.ok(lockedApps(4).includes('archive'), 'Archive still locks at high phase');
 });
 
 test('Allie tone defined per phase', () => {
