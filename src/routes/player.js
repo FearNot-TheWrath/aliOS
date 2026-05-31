@@ -41,5 +41,9 @@ module.exports = (app) => {
     res.json({ results });
   });
 
+  router.get('/decks', guard, (req, res) => {
+    res.json({ decks: db.prepare('SELECT id, name, image_path, unlocked FROM decks ORDER BY sort_order').all() });
+  });
+
   return router;
 };

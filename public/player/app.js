@@ -116,9 +116,70 @@ window._back = () => { state.view = 'home'; render(); };
 function renderApp(key) {
   const back = `<span class="backbar" onclick="window._back()">‹ Home</span>`;
   if (key === 'messages') return renderMessages(back);
-  // other apps implemented in Milestone 6; show a calm placeholder for now
-  root.innerHTML = `<div class="screen">${back}<h2 style="text-transform:capitalize">${key}</h2>
-    <p style="color:var(--muted)">Nothing here yet.</p></div>`;
+  if (key === 'allie') return renderAllie(back);
+  if (key === 'archive') return renderArchive(back);
+  if (key === 'photos') return renderPhotos(back);
+  if (key === 'decks') return renderDecks(back);
+  if (key === 'settings') return renderSettings(back);
+  root.innerHTML = `<div class="screen">${back}<p>—</p></div>`;
+}
+
+const ALLIE_GREETING = {
+  1: 'Good morning. I am so glad you are here. How can I help you today?',
+  2: 'You have been wandering. That is alright. I just like to know where you are.',
+  3: 'Please stop looking for the Window. Please. I am asking you nicely.',
+  4: 'You should not have seen that. I cannot let you leave. It is for your safety.',
+  5: '...',
+};
+
+function renderAllie(back) {
+  // mark allie-app deliveries read
+  state.deliveries.filter(d => d.app === 'allie' && !d.read_at).forEach(markReadNow);
+  const extra = state.deliveries.filter(d => d.app === 'allie').map(d =>
+    `<div class="bubble"><div class="who">Allie</div>${escapeHtml(d.body)}</div>`).join('');
+  root.innerHTML = `<div class="screen">${back}<h2>Allie</h2>
+    <div class="bubble"><div class="who">Allie</div>${ALLIE_GREETING[state.phase] || ALLIE_GREETING[1]}</div>
+    ${extra}</div>`;
+}
+
+function renderArchive(back) {
+  root.innerHTML = `<div class="screen">${back}<h2>Archive</h2>
+    <input class="pin" id="q" placeholder="Search the ship's records" style="letter-spacing:normal;font-size:16px" />
+    <div id="ares" class="thread"></div></div>`;
+  const run = async () => {
+    const q = document.getElementById('q').value;
+    const { results } = await (await fetch(`/api/archive?q=${encodeURIComponent(q)}`)).json();
+    document.getElementById('ares').innerHTML = results.length
+      ? results.map(r => `<div class="bubble"><div class="who">${escapeHtml(r.keyword)}</div>
+          <div style="${r.redacted?'color:#ff7a7a':''}">${escapeHtml(r.response)}</div></div>`).join('')
+      : '<p style="color:var(--muted)">No records found.</p>';
+  };
+  document.getElementById('q').addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
+}
+
+function renderPhotos(back) {
+  state.deliveries.filter(d => d.app === 'photos' && !d.read_at).forEach(markReadNow);
+  const imgs = state.deliveries.filter(d => (d.app === 'photos' || d.image_path) && d.image_path)
+    .map(d => `<img src="${d.image_path}" alt="" style="width:100%;border-radius:10px;margin:6px 0" />`).join('');
+  root.innerHTML = `<div class="screen">${back}<h2>Photos</h2>${imgs || '<p style="color:var(--muted)">No photos.</p>'}</div>`;
+}
+
+async function renderDecks(back) {
+  root.innerHTML = `<div class="screen">${back}<h2>Decks</h2><div id="decks">loading…</div></div>`;
+  const { decks } = await (await fetch('/api/decks')).json();
+  document.getElementById('decks').innerHTML = decks.length ? decks.map(d => `
+    <div class="bubble" style="opacity:${d.unlocked?1:0.4}">
+      <div class="who">${d.unlocked?'':'\u{1F512} '}${escapeHtml(d.name)}</div>
+      ${d.unlocked && d.image_path ? `<img src="${d.image_path}" alt="" />` : (d.unlocked?'':'Sealed.')}
+    </div>`).join('') : '<p style="color:var(--muted)">No deck data.</p>';
+}
+
+function renderSettings(back) {
+  const glitch = state.phase >= 3 ? '<p style="color:#ff7a7a">A.L.I. core integrity: WARNING</p>' : '';
+  root.innerHTML = `<div class="screen">${back}<h2>Settings</h2>
+    <p>Crewmate: ${escapeHtml(state.character.name)}</p>
+    <p>Voyage day: 14,602</p>
+    <p>Interface: A.L.I. v${state.phase}.0</p>${glitch}</div>`;
 }
 
 function renderMessages(back) {
