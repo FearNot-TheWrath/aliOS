@@ -1,0 +1,14 @@
+/* public/player/cutscene.css */
+#cutscene { position:fixed; inset:0; background:#000; color:#c9b25a; z-index:9999;
+  display:none; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:24px;
+  font-family: ui-monospace, Menlo, monospace; }
+#cutscene.show { display:flex; animation: flicker 3s steps(2) infinite; }
+#cutscene .line { opacity:0; max-width:520px; font-size:18px; line-height:1.5; margin:6px 0;
+  animation: typein .1s forwards; }
+@keyframes flicker { 0%,100%{opacity:1} 7%{opacity:.4} 8%{opacity:1} 53%{opacity:.7} 54%{opacity:1} }
+@keyframes typein { to { opacity:1 } }
+#cutscene .stars { position:absolute; inset:0; background:
+  radial-gradient(2px 2px at 20% 30%, #fff, transparent),
+  radial-gradient(2px 2px at 70% 60%, #fff, transparent),
+  radial-gradient(1px 1px at 40% 80%, #9fe, transparent); opacity:0; transition:opacity 3s; }
+#cutscene.reveal .stars { opacity:.5; }

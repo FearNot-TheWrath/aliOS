@@ -2923,7 +2923,7 @@ npm start   # http://localhost:3007  (player)  /console (DM)
 1. Set a real SESSION_SECRET and parent PIN (update config.parent_pin in the db).
 2. pm2 start ecosystem.config.js && pm2 save
 3. Add ingress to /etc/cloudflared/config.yml:
-     - hostname: alios.thelopezfamily.org
+     - hostname: alios.playdnd.online
        service: http://localhost:3007
    then: sudo systemctl restart cloudflared
 4. Add a CNAME for alios -> <tunnel-id>.cfargotunnel.com
@@ -2939,7 +2939,7 @@ node -e "const{openDb}=require('./src/db');const{setConfig}=require('./src/confi
 
 - [ ] **Step 5: Deploy following the tunnel pattern**
 
-Follow the steps in README. Verify `https://alios.thelopezfamily.org` serves the player app and `/console` prompts for the PIN. Confirm a send from the console reaches a phone over the deployed socket.
+Follow the steps in README. Verify `https://alios.playdnd.online` serves the player app and `/console` prompts for the PIN. Confirm a send from the console reaches a phone over the deployed socket.
 
 - [ ] **Step 6: Commit**
 
@@ -2948,7 +2948,7 @@ git add .env.example ecosystem.config.js README.md
 git commit -m "chore: env, pm2 config, deploy README"
 ```
 
-**Milestone 10 checkpoint:** live at `alios.thelopezfamily.org`, ready for a dress rehearsal before Session 1.
+**Milestone 10 checkpoint:** live at `alios.playdnd.online`, ready for a dress rehearsal before Session 1.
 
 ---
 

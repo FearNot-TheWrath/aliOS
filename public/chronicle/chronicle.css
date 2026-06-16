@@ -1,0 +1,41 @@
+:root{
+  --bg-top:#102a27; --bg-bot:#081715; --ink:#eafff8; --muted:#bfe6dd;
+  --accent:#3ad29f; --redact:#6e4a57; --panel:rgba(255,255,255,.05);
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:Georgia,"Times New Roman",serif;color:var(--ink);
+  background:linear-gradient(170deg,var(--bg-top),var(--bg-bot));min-height:100vh;}
+.wrap{max-width:760px;margin:0 auto;padding:28px 20px 60px;}
+header{text-align:center;border-bottom:1px solid #234b44;padding-bottom:18px;margin-bottom:22px;}
+.crest{display:inline-block;width:54px;height:54px;border-radius:50%;
+  background:radial-gradient(circle at 50% 40%,#bdfff0,#3ad29f 60%,#1f9e8f);
+  color:#04201b;font-family:system-ui,sans-serif;font-weight:700;font-size:13px;
+  line-height:54px;letter-spacing:1px;margin-bottom:10px;}
+h1{margin:.1em 0;font-size:30px;letter-spacing:.5px;}
+.sub{color:var(--muted);font-style:italic;margin:.2em 0 0;}
+footer{text-align:center;color:#7fb8ac;font-size:12px;margin-top:40px;
+  font-family:system-ui,sans-serif;letter-spacing:.5px;}
+
+.entry{background:var(--panel);border:1px solid #1f3a36;border-radius:12px;
+  padding:20px 22px;margin:18px 0;}
+.entry h2{margin-top:0;color:#eafff8;font-size:22px;}
+.entry h3{color:var(--accent);font-size:16px;font-variant:small-caps;letter-spacing:.5px;}
+.entry p{line-height:1.7;}
+.entry blockquote{border-left:3px solid var(--accent);margin:1em 0;padding:.2em 0 .2em 14px;
+  color:var(--muted);font-style:italic;}
+.entry hr{border:none;border-top:1px solid #2a4a44;margin:1.4em 0;}
+.entry ul{line-height:1.6;}
+
+.redacted{border-style:dashed;border-color:var(--redact);background:rgba(110,74,87,.08);}
+.redbar{font-family:system-ui,sans-serif;letter-spacing:3px;color:var(--redact);
+  font-weight:700;font-size:15px;}
+.redbar .blocks{background:var(--redact);color:var(--redact);border-radius:3px;padding:0 6px;}
+.teaser{color:#9c8a90;font-style:italic;margin:.6em 0 1em;}
+.codebox{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-family:system-ui,sans-serif;}
+.codebox input{font:inherit;font-family:system-ui,sans-serif;padding:9px 11px;border-radius:8px;
+  border:1px solid #3a2530;background:#160b12;color:#f3dfe6;letter-spacing:2px;text-transform:uppercase;}
+.codebox button{font:inherit;font-family:system-ui,sans-serif;padding:9px 14px;border:none;border-radius:8px;
+  background:var(--accent);color:#04201b;font-weight:700;cursor:pointer;}
+.err{color:#ff7a7a;font-family:system-ui,sans-serif;font-size:13px;margin-top:6px;min-height:16px;}
+.unlocked-tag{font-family:system-ui,sans-serif;font-size:11px;letter-spacing:1px;color:var(--accent);
+  text-transform:uppercase;}
